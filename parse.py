@@ -2,11 +2,14 @@ import re
 
 from list import *
 from symbol import *
-
+from enums import *
+import eval
 
 def show(value):
     if type(value) is bool:
         return "true" if value else "false"
+    elif value in values_to_string.keys():
+        return values_to_string[value]
     elif is_symbol(value):
         return symbol_name(value)
     elif type(value) is str:
@@ -40,6 +43,8 @@ def strip_trash_left(text):
 
 
 def parse_token(text):
+    if text in string_to_values.keys():
+        return string_to_values[text]
     if text == "true":
         return True
     elif text == "false":
@@ -89,6 +94,7 @@ def eval_text(text):
     text = strip_trash_left(text)
     while text:
         x, text = parser(text)
+        x = eval.eval_value(x)
         print(show(x))
         text = strip_trash_left(text)
 

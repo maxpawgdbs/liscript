@@ -10,6 +10,7 @@ def RPL():
             else:
                 eval_text(cmd)
         except Exception as e:
+            # raise e
             print(e)
 
 
