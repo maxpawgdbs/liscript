@@ -1,4 +1,4 @@
-from parse import *
+from parse import eval_text, eval_cmd
 
 
 def RPL():

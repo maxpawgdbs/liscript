@@ -1,32 +1,10 @@
 import re
 
-from list import *
-from symbol import *
-from enums import *
-import eval
-
-def show(value):
-    if type(value) is bool:
-        return "true" if value else "false"
-    elif value in values_to_string.keys():
-        return values_to_string[value]
-    elif is_symbol(value):
-        return symbol_name(value)
-    elif type(value) is str:
-        return '"' + value + '"'
-    elif is_cons_list(value):
-        out = "("
-        while not is_nil(value):
-            out += show(car(value)) + " "
-            value = cdr(value)
-        if out[-1] == " ":
-            out = out[:-1]
-        out += ")"
-        return out
-
-    else:
-        return str(value)
-
+from list import nil, cons
+from symbol import symbol
+from enums import string_to_values, SF
+from eval import eval_value
+from show import show
 
 def strip_trash_left(text):
     while len(text) > 0:
@@ -81,6 +59,9 @@ def parser(text):
         if s == 0:
             raise ValueError("Отсуствует закрывающая кавычка в " + text[:50])
         return text[:s + 1][1:-1], text[s + 1:]
+    elif f == "'":
+        x, y = parser(text[1:])
+        return cons(SF.QUOTE, cons(x, nil)), y
     elif f == "(":
         return parse_list(text[1:])
     elif f == ")":
@@ -94,7 +75,7 @@ def eval_text(text):
     text = strip_trash_left(text)
     while text:
         x, text = parser(text)
-        x = eval.eval_value(x)
+        x = eval_value(x)
         print(show(x))
         text = strip_trash_left(text)
 
