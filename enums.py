@@ -11,9 +11,18 @@ class PR(Enum):
 
 class SF(Enum):
     (  # DEF, SET,
-        QUOTE, TYPEOF, CONS, CAR, CDR, IF, PRINT, READ,
+        QUOTE,
+        TYPEOF,
+        CONS,
+        CAR,
+        CDR,
+        IF,
+        PRINT,
+        READ,
         # EVAL, EVALIN, LAMBDA, MACRO,
-        SYMBOL, DO) = range(10)
+        SYMBOL,
+        DO,
+    ) = range(10)
 
 
 values_to_string = {

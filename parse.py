@@ -6,6 +6,7 @@ from enums import string_to_values, SF
 from eval import eval_value
 from show import show
 
+
 def strip_trash_left(text):
     while len(text) > 0:
         if text[0] in ", \n\r\t":
@@ -58,7 +59,7 @@ def parser(text):
         s = text[1:].find('"') + 1
         if s == 0:
             raise ValueError("Отсуствует закрывающая кавычка в " + text[:50])
-        return text[:s + 1][1:-1], text[s + 1:]
+        return text[: s + 1][1:-1], text[s + 1 :]
     elif f == "'":
         x, y = parser(text[1:])
         return cons(SF.QUOTE, cons(x, nil)), y

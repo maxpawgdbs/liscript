@@ -25,6 +25,7 @@ def show(value):
     else:
         return str(value)
 
+
 def repr(value):
     if type(value) is bool:
         return "true" if value else "false"

@@ -13,9 +13,11 @@ def equal_lists(x, y):
         return False
     head_x = car(x)
     head_y = car(y)
-    while (head_x == head_y and type(head_x) == type(head_y)) \
-            if not (is_cons_list(head_x) and is_cons_list(head_y)) else \
-            equal_lists(head_x, head_y):
+    while (
+        (head_x == head_y and type(head_x) == type(head_y))
+        if not (is_cons_list(head_x) and is_cons_list(head_y))
+        else equal_lists(head_x, head_y)
+    ):
         x = cdr(x)
         y = cdr(y)
         if is_nil(x) and is_nil(y):
@@ -31,7 +33,9 @@ operations = {
     OP.Add: (lambda x, y: x + y),
     OP.Sub: (lambda x, y: x - y),
     OP.Mul: (lambda x, y: x * y),
-    OP.Div: (lambda x, y: x / y if isinstance(x, float) or isinstance(y, float) else x // y),
+    OP.Div: (
+        lambda x, y: x / y if isinstance(x, float) or isinstance(y, float) else x // y
+    ),
     OP.Mod: (lambda x, y: x % y),
     OP.SConcat: (lambda x, y: repr(x) + repr(y)),
 }
@@ -40,9 +44,13 @@ predicate = {
     # PR.Eq: (lambda x, y: x == y and
     #                      type(x) == type(y) and
     #                      (not is_cons_list(x) or not is_cons_list(y) or equal_lists(x, y))),
-    PR.Eq: (lambda x, y: (x == y and type(x) == type(y))
-    if not (is_cons_list(x) and is_cons_list(y)) else
-    equal_lists(x, y)),
+    PR.Eq: (
+        lambda x, y: (
+            (x == y and type(x) == type(y))
+            if not (is_cons_list(x) and is_cons_list(y))
+            else equal_lists(x, y)
+        )
+    ),
     PR.Gt: (lambda x, y: x > y),
     PR.Lt: (lambda x, y: x < y),
     PR.Gte: (lambda x, y: x >= y),
@@ -77,6 +85,7 @@ def fold_pr(pr, values):
 
     return True
 
+
 def get_args(tail, count):
     out = []
     for _ in range(count):
@@ -86,9 +95,10 @@ def get_args(tail, count):
         tail = cdr(tail)
 
     if not is_nil(tail):
-        raise ValueError("Остались лишние элементы") # зачем ошибка?
+        raise ValueError("Остались лишние элементы")  # зачем ошибка?
 
     return out
+
 
 def eval_value(value):
     if is_cons_list(value):
