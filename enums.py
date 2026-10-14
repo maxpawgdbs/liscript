@@ -22,11 +22,12 @@ class SF(Enum):
         READ,
         EVAL,
         COND,
-        # EVALIN, LAMBDA, MACRO,
+        LAMBDA,
+        DAMBDA,
+        # EVALIN, MACRO,
         SYMBOL,
         DO,
-    ) = range(13)
-
+    ) = range(15)
 
 values_to_string = {
     OP.Add: "+",
@@ -54,6 +55,8 @@ values_to_string = {
     SF.EVAL: "eval",
     SF.DEF: "def",
     SF.SET: "set!",
+    SF.DAMBDA: "dambda",
+    SF.LAMBDA: "lambda",
 }
 
 string_to_values = dict(zip(values_to_string.values(), values_to_string.keys()))

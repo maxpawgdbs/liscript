@@ -1,6 +1,0 @@
-(def n (read "Введите число "))
-(def out 1)
-(def fact '(cond (> n 1) (do (set! out (* out n)) (set! n (- n 1)) (eval fact)) 0))
-(eval fact)
-(print "Факториал" n "равен" out)
-(symbol "")

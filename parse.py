@@ -1,14 +1,16 @@
 from eval import eval_value
 from show import show
 from parser import parser, strip_trash_left
+from enviroment import Env
 
+env = Env()
 
 def eval_text(text, mode="text"):
     out = None
     text = strip_trash_left(text)
     while text:
         x, text = parser(text)
-        x = eval_value(x)
+        x = eval_value(x, env)
         out = show(x)
         if mode == "text":
             print(out)

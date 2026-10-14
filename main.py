@@ -1,8 +1,9 @@
 from parse import eval_text, eval_cmd
 
+eval_cmd("l stdlib/liscript.clj")
 
 
-def RPL():
+def REPL():
     while True:
         cmd = input(">> ")
         try:
@@ -15,4 +16,4 @@ def RPL():
             print(e)
 
 
-RPL()
+REPL()

@@ -56,7 +56,7 @@ def parser(text):
     if f == '"':
         s = text[1:].find('"') + 1
         if s == 0:
-            raise ValueError("Отсуствует закрывающая кавычка в " + text[:50])
+            raise ValueError("Отсутствует закрывающая кавычка в " + text[:50])
         return text[: s + 1][1:-1], text[s + 1 :]
     elif f == "'":
         x, y = parser(text[1:])
