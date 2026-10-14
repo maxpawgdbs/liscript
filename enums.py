@@ -10,19 +10,22 @@ class PR(Enum):
 
 
 class SF(Enum):
-    (  # DEF, SET,
+    (
+        DEF,
+        SET,
         QUOTE,
         TYPEOF,
         CONS,
         CAR,
         CDR,
-        IF,
         PRINT,
         READ,
-        # EVAL, EVALIN, LAMBDA, MACRO,
+        EVAL,
+        COND,
+        # EVALIN, LAMBDA, MACRO,
         SYMBOL,
         DO,
-    ) = range(10)
+    ) = range(13)
 
 
 values_to_string = {
@@ -32,23 +35,25 @@ values_to_string = {
     OP.Div: "/",
     OP.Mod: "%",
     OP.SConcat: "++",
-
     PR.Eq: "=",
     PR.Gt: ">",
     PR.Lt: "<",
     PR.Gte: ">=",
     PR.Lte: "<=",
-
     SF.QUOTE: "quote",
     SF.TYPEOF: "typeof",
     SF.CONS: "cons",
     SF.CAR: "car",
     SF.CDR: "cdr",
-    SF.IF: "if",
+    # SF.IF: "if",
     SF.PRINT: "print",
     SF.READ: "read",
     SF.SYMBOL: "symbol",
     SF.DO: "do",
+    SF.COND: "cond",
+    SF.EVAL: "eval",
+    SF.DEF: "def",
+    SF.SET: "set!",
 }
 
 string_to_values = dict(zip(values_to_string.values(), values_to_string.keys()))
