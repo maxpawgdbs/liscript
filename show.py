@@ -1,7 +1,7 @@
 from list import is_cons_list, is_nil, car, cdr
 from symbol import symbol_name, is_symbol
 from enums import values_to_string, SF
-from lambdadambda import Lambda, Dambda
+from dlambda import Lambda, Dambda
 
 
 def show(value):

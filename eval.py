@@ -3,7 +3,7 @@ from enums import OP, PR, SF, values_to_string
 from show import repr
 from symbol import is_symbol, symbol
 from parser import parser
-from lambdadambda import Lambda, Dambda
+from dlambda import Lambda, Dambda
 from enviroment import Env
 
 
@@ -96,7 +96,7 @@ def get_args(tail, count):
         tail = cdr(tail)
 
     if not is_nil(tail):
-        raise ValueError("Остались лишние элементы")  # зачем ошибка?
+        raise ValueError("Остались лишние элементы")
 
     return out
 
@@ -128,7 +128,6 @@ def eval_value(value, e):
                 else:
                     return type(arg).__name__
             elif head == SF.CONS:
-                # args = list(map(eval_value, get_args(tail, 2)))
                 args = [eval_value(value, e) for value in get_args(tail, 2)]
                 if not is_cons_list(args[1]):
                     raise ValueError("Хвост не список")
