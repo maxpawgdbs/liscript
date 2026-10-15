@@ -5,6 +5,7 @@ from enviroment import Env
 
 env = Env()
 
+
 def eval_text(text, mode="text"):
     out = None
     text = strip_trash_left(text)
@@ -17,6 +18,7 @@ def eval_text(text, mode="text"):
         text = strip_trash_left(text)
     if mode == "file" and not (out is None):
         print(out)
+
 
 def eval_cmd(cmd):
     args = cmd.split()

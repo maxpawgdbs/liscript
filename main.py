@@ -1,6 +1,9 @@
-from parse import eval_text, eval_cmd
+from eval_first import eval_text, eval_cmd
+import sys
 
-eval_cmd("l stdlib/liscript.clj")
+sys.setrecursionlimit(2**31 - 1)
+STDLIB_PATH = "stdlib/liscript.clj"
+eval_cmd(f"l {STDLIB_PATH}")
 
 
 def REPL():

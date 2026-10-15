@@ -11,7 +11,7 @@ class Env:
         #     raise ValueError("Immutable")
         self.values[symbol_name(sym)] = value
 
-    def get(self, sym): # TODO сделать настройки
+    def get(self, sym):  # TODO сделать настройки
         cur = self
         while not (cur is None):
             if symbol_name(sym) in cur.values:

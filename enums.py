@@ -24,10 +24,11 @@ class SF(Enum):
         COND,
         LAMBDA,
         DAMBDA,
-        # EVALIN, MACRO,
         SYMBOL,
         DO,
+        # EVALIN, MACRO,
     ) = range(15)
+
 
 values_to_string = {
     OP.Add: "+",
@@ -46,7 +47,6 @@ values_to_string = {
     SF.CONS: "cons",
     SF.CAR: "car",
     SF.CDR: "cdr",
-    # SF.IF: "if",
     SF.PRINT: "print",
     SF.READ: "read",
     SF.SYMBOL: "symbol",

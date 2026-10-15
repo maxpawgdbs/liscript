@@ -5,6 +5,8 @@ from symbol import is_symbol, symbol
 from parser import parser
 from lambdadambda import Lambda, Dambda
 from enviroment import Env
+
+
 def equal_lists(x, y):
     if not is_cons_list(x) or not is_cons_list(y):
         return False
@@ -42,9 +44,6 @@ operations = {
 }
 
 predicate = {
-    # PR.Eq: (lambda x, y: x == y and
-    #                      type(x) == type(y) and
-    #                      (not is_cons_list(x) or not is_cons_list(y) or equal_lists(x, y))),
     PR.Eq: (
         lambda x, y: (
             (x == y and type(x) == type(y))
@@ -101,7 +100,9 @@ def get_args(tail, count):
 
     return out
 
+
 DEFAULT_ARGS = symbol("rest-args")
+
 
 def eval_value(value, e):
     if is_symbol(value):

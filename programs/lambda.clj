@@ -1,8 +1,0 @@
-(def sum (lambda (a, b, c) (+ a b c)))
-(def sum1 (sum 4))
-(def sum2 (sum1 5))
-(def sum3 (sum2 6))
-;; (print sum sum1 sum2 sum3)
-(def lam (lambda (x, y) rest-args))
-(lam 1 2 3)
-(def list (lambda () rest-args))
