@@ -5,3 +5,4 @@ __pycache__/
 .lsp/
 .clj-kondo/
 cljfmt.exe
+programs/test.clj

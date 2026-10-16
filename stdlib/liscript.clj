@@ -104,4 +104,35 @@
                                        (iter (+ i 1) n array)))))
          (iter 2 k ()))))
 
+(def fast-pow
+  (lambda (x y)
+          (do
+            (def iter (lambda  (a b res) (cond (= b 0) res
+                                               (cond (= (% b 2) 1)
+                                                     (iter (* a a) (/ b 2) (* res a))
+                                                     (iter (* a a) (/ b 2) res)))))
+            (iter x y 1))))
+
+(def merge-sort (lambda (array)
+                        (cond (<= (length array) 1)
+                              array
+                              (do
+                                (def split (lambda (arr k out)
+                                                   (cond (= k 0)
+                                                         out
+                                                         (split (cdr arr) (- k 1) (cons (car arr) out)))))
+                                (def n (length array)
+                                  left (merge-sort (split array (/ n 2) ()))
+                                  right (merge-sort (split (reverse array) (+ (/ n 2) (% n 2)) ())))
+                                (def iter (lambda (a b ans)
+                                                  (cond
+                                                    (= a ())
+                                                    (cond (= b ()) ans (iter a (cdr b)  (cons  (car b) ans)))
+                                                    (cond (= b ())
+                                                          (iter (cdr a) b (cons (car a) ans))
+                                                          (cond (< (car a) (car b)) (iter (cdr a) b (cons (car a) ans)) (iter a (cdr b)  (cons  (car b) ans)))))))
+                                (reverse (iter left right ()))))))
+
+(def sort merge-sort)
+
 (symbol "LiScript dev version by october 2026")
