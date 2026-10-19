@@ -26,8 +26,9 @@ class SF(Enum):
         DAMBDA,
         SYMBOL,
         DO,
-        # EVALIN, MACRO,
-    ) = range(15)
+        MACRO
+        # EVALIN
+    ) = range(16)
 
 
 values_to_string = {
@@ -57,6 +58,7 @@ values_to_string = {
     SF.SET: "set!",
     SF.DAMBDA: "dambda",
     SF.LAMBDA: "lambda",
+    SF.MACRO: "macro",
 }
 
 string_to_values = dict(zip(values_to_string.values(), values_to_string.keys()))

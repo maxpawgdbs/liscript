@@ -1,7 +1,7 @@
 from list import is_cons_list, is_nil, car, cdr
 from symbol import symbol_name, is_symbol
 from enums import values_to_string, SF
-from dlambda import Lambda, Dambda
+from dlambda import Lambda, Dambda, Macro
 
 
 def show(value):
@@ -26,6 +26,8 @@ def show(value):
         return f"({values_to_string[SF.LAMBDA]} {show(value.args)} {show(value.body)})"
     elif type(value) is Dambda:
         return f"({values_to_string[SF.DAMBDA]} {show(value.args)} {show(value.body)})"
+    elif type(value) is Macro:
+        return f"({values_to_string[SF.MACRO]} {show(value.args)} {show(value.body)})"
     else:
         return str(value)
 

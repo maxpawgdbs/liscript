@@ -3,7 +3,7 @@ from enums import OP, PR, SF, values_to_string
 from show import repr
 from symbol import is_symbol, symbol
 from parser import parser
-from dlambda import Lambda, Dambda
+from dlambda import Lambda, Dambda, Macro
 from enviroment import Env
 
 
@@ -99,6 +99,16 @@ def get_args(tail, count):
         raise ValueError("Остались лишние элементы")
 
     return out
+
+def macro_expand(value, e):
+    if is_symbol(value):
+        return e.get(value)
+    elif is_cons_list(value):
+        return nil if is_nil(value) else cons(macro_expand(car(value), e), macro_expand(cdr(value), e))
+    else:
+        return value
+
+
 
 
 DEFAULT_ARGS = symbol("rest-args")
@@ -226,16 +236,17 @@ def eval_value(value, e):
                 if not is_cons_list(args[0]):
                     raise ValueError("TODO")
                 return Dambda(args[0], args[1])
+            elif head == SF.MACRO:
+                args = get_args(tail, 2)
+                if not is_cons_list(args[0]):
+                    raise ValueError("TODO")
+                return Macro(args[0], args[1])
         elif isinstance(head, Lambda):
             tail = cdr(value)
             new_e = Env(head.env)
             dambda_args = head.args
             while True:
-                if is_nil(tail) and is_nil(dambda_args):
-                    return eval_value(head.body, new_e)
-                elif is_nil(tail):
-                    return Lambda(dambda_args, head.body, new_e)
-                elif is_nil(dambda_args):
+                if is_nil(dambda_args):
                     out = []
                     while not is_nil(tail):
                         out.append(eval_value(car(tail), e))
@@ -244,7 +255,10 @@ def eval_value(value, e):
                     for el in out[::-1]:
                         cons_out = cons(el, cons_out)
                     new_e.define(DEFAULT_ARGS, cons_out)
-                    return eval_value(head.body, new_e)
+                    break
+                elif is_nil(tail):
+                    return Lambda(dambda_args, head.body, new_e)
+
                 arg = eval_value(car(tail), e)
                 sym = car(dambda_args)
 
@@ -252,16 +266,15 @@ def eval_value(value, e):
 
                 tail = cdr(tail)
                 dambda_args = cdr(dambda_args)
+
+            return eval_value(head.body, new_e)
+
         elif isinstance(head, Dambda):
             tail = cdr(value)
             new_e = Env(e)
             dambda_args = head.args
             while True:
-                if is_nil(tail) and is_nil(dambda_args):
-                    return eval_value(head.body, new_e)
-                elif is_nil(tail):
-                    return Dambda(dambda_args, head.body)
-                elif is_nil(dambda_args):
+                if is_nil(dambda_args):
                     out = []
                     while not is_nil(tail):
                         out.append(eval_value(car(tail), e))
@@ -270,7 +283,11 @@ def eval_value(value, e):
                     for el in out[::-1]:
                         cons_out = cons(el, cons_out)
                     new_e.define(DEFAULT_ARGS, cons_out)
-                    return eval_value(head.body, new_e)
+                    break
+                elif is_nil(tail):
+                    raise ValueError("TODO")
+                    # return Lambda(dambda_args, head.body, new_e)
+
                 arg = eval_value(car(tail), e)
                 sym = car(dambda_args)
 
@@ -278,6 +295,26 @@ def eval_value(value, e):
 
                 tail = cdr(tail)
                 dambda_args = cdr(dambda_args)
+
+            return eval_value(head.body, new_e)
+        elif isinstance(head, Macro):
+            tail = cdr(value)
+            new_e = Env()
+            macro_args = head.args
+            while True:
+                if is_nil(macro_args):
+                    new_e.define(DEFAULT_ARGS, tail)
+                    break
+                elif is_nil(tail):
+                    # raise ValueError("TODO")
+                    return Macro(macro_args, macro_expand(head.body, new_e))
+
+                new_e.define(car(macro_args), car(tail))
+
+                tail = cdr(tail)
+                macro_args = cdr(macro_args)
+
+            return eval_value(macro_expand(head.body, new_e), e)
 
         else:
             raise ValueError("Плохая головная форма")

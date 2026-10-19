@@ -135,4 +135,11 @@
 
 (def sort merge-sort)
 
+(def append (lambda (array1 array2) (do
+                                      (def iter (lambda (a b)
+                                                        (cond (= a ())
+                                                              b
+                                                              (iter (cdr a) (cons (car a) b)))))
+                                      (iter (reverse array1) array2))))
+
 (symbol "LiScript dev version by october 2026")
