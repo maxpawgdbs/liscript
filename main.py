@@ -1,7 +1,8 @@
 from eval_first import eval_text, eval_cmd
-import sys
 
-sys.setrecursionlimit(2**31 - 1)
+# import sys
+# sys.setrecursionlimit(2**31 - 1)
+
 STDLIB_PATH = "stdlib/liscript.clj"
 eval_cmd(f"l {STDLIB_PATH}")
 

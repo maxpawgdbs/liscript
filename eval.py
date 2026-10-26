@@ -1,10 +1,12 @@
 from list import is_nil, car, cdr, is_cons_list, cons, nil
 from enums import OP, PR, SF, values_to_string
-from show import repr
+from show import repr, show
 from symbol import is_symbol, symbol
 from parser import parser
-from dlambda import Lambda, Dambda, Macro
-from enviroment import Env
+from dlambda import Lambda, Dambda, Racro
+from enviroment import Env, macro_env, env
+
+REST_ARGS = symbol("rest-args")
 
 
 def equal_lists(x, y):
@@ -60,7 +62,9 @@ predicate = {
 
 def fold_op(op, values, e):
     if is_nil(values):
-        raise ValueError(f"Операция {values_to_string[op]} без аргументов!")
+        raise ValueError(
+            f"/eval.py/fold_op/ Попытка вызвать {values_to_string[op]} без аргументов"
+        )
     out = eval_value(car(values), e)
     out = repr(out) if op == OP.SConcat else out
     values = cdr(values)
@@ -91,27 +95,67 @@ def get_args(tail, count):
     out = []
     for _ in range(count):
         if is_nil(tail):
-            raise ValueError("Недостаточно элементов в массиве")
+            raise ValueError("/eval.py/get_args/ Недостаточно элементов в листе")
         out.append(car(tail))
         tail = cdr(tail)
 
     if not is_nil(tail):
-        raise ValueError("Остались лишние элементы")
+        raise ValueError("/eval.py/get_args/  Остались лишние элементы в листе")
 
     return out
 
-def macro_expand(value, e):
+
+def racro_expand(value, e):
     if is_symbol(value):
         return e.get(value)
     elif is_cons_list(value):
-        return nil if is_nil(value) else cons(macro_expand(car(value), e), macro_expand(cdr(value), e))
+        return (
+            nil
+            if is_nil(value)
+            else cons(racro_expand(car(value), e), racro_expand(cdr(value), e))
+        )
     else:
         return value
 
 
+def macroexpand(value):
+    if is_cons_list(value):
+        if is_nil(value):
+            return nil
+        l = None
+        h = car(value)
+        if is_symbol(h):
+            try:
+                z = macro_env.get(h)
+                if isinstance(z, Lambda):
+                    l = z
+            except Exception:
+                pass
+        if not (l is None):
+            tail = cdr(value)
+            new_env = Env(env)
+            new_env.define(h, l)
+            l.env.define(h, l)
+            macro_args = l.args
+            while True:
+                if is_nil(macro_args):
+                    new_env.define(REST_ARGS, tail)
+                    break
+                elif is_nil(tail):
+                    raise ValueError(
+                        f"/eval.py/macroexpand/ недостаточно аргументов для макроса"
+                    )
 
+                new_env.define(car(macro_args), car(tail))
+                macro_args = cdr(macro_args)
+                tail = cdr(tail)
 
-DEFAULT_ARGS = symbol("rest-args")
+            # print(new_env.values.keys())
+            return macroexpand(eval_value(l.body, new_env))
+        else:
+            return cons(macroexpand(h), macroexpand(cdr(value)))
+    else:
+        return value
 
 
 def eval_value(value, e):
@@ -140,17 +184,23 @@ def eval_value(value, e):
             elif head == SF.CONS:
                 args = [eval_value(value, e) for value in get_args(tail, 2)]
                 if not is_cons_list(args[1]):
-                    raise ValueError("Хвост не список")
+                    raise ValueError(
+                        "/eval.py/eval_value/ cons получил вторым аргументом не лист"
+                    )
                 return cons(args[0], args[1])
             elif head == SF.CAR:
                 arg = eval_value(get_args(tail, 1)[0], e)
                 if not is_cons_list(arg):
-                    raise ValueError("Это не список")
+                    raise ValueError(
+                        "/eval.py/eval_value/ car получил аргументом не лист"
+                    )
                 return car(arg)
             elif head == SF.CDR:
                 arg = eval_value(get_args(tail, 1)[0], e)
                 if not is_cons_list(arg):
-                    raise ValueError("Это не список")
+                    raise ValueError(
+                        "/eval.py/eval_value/ cdr получил аргументом не лист"
+                    )
                 return cdr(arg)
             elif head == SF.COND:
                 while not is_nil(tail):
@@ -160,13 +210,15 @@ def eval_value(value, e):
                     if is_nil(tail):
                         return condition_or_value
                     if not isinstance(condition_or_value, bool):
-                        raise ValueError("Ожидалось булева")
+                        raise ValueError("/eval.py/eval_value/ cond получил не булеву")
 
                     if condition_or_value:
                         return eval_value(car(tail), e)
                     else:
                         tail = cdr(tail)
-                raise ValueError("Отсутствуют аргументы")
+                raise ValueError(
+                    "/eval.py/eval_value/ cond получил недостаточно аргументов"
+                )
             elif head == SF.EVAL:
                 arg = eval_value(get_args(tail, 1)[0], e)
                 return eval_value(arg, e)
@@ -198,12 +250,16 @@ def eval_value(value, e):
                 while not is_nil(tail):
                     sym = car(tail)
                     if not is_symbol(sym):
-                        raise ValueError("Не симбол")
+                        raise ValueError(
+                            f"/eval.py/eval_value/ def получил {show(sym)} вместо симбола"
+                        )
 
                     tail = cdr(tail)
 
                     if is_nil(tail):
-                        raise ValueError("Отсутствует значение")
+                        raise ValueError(
+                            "/eval.py/eval_value/ def получил недостаточно аргументов"
+                        )
 
                     value = eval_value(car(tail), e)
                     e.define(sym, value)
@@ -214,12 +270,16 @@ def eval_value(value, e):
                 while not is_nil(tail):
                     sym = car(tail)
                     if not is_symbol(sym):
-                        raise ValueError("Не симбол")
+                        raise ValueError(
+                            f"/eval.py/eval_value/ set! получил {show(sym)} вместо симбола"
+                        )
 
                     tail = cdr(tail)
 
                     if is_nil(tail):
-                        raise ValueError("Отсутствует значение")
+                        raise ValueError(
+                            "/eval.py/eval_value/ set! получил недостаточно аргументов"
+                        )
 
                     value = eval_value(car(tail), e)
                     e.set(sym, value)
@@ -229,18 +289,30 @@ def eval_value(value, e):
             elif head == SF.LAMBDA:
                 args = get_args(tail, 2)
                 if not is_cons_list(args[0]):
-                    raise ValueError("TODO")
+                    raise ValueError(
+                        "/eval.py/eval_value/ lambda получил аргументы в неверном формате"
+                    )
                 return Lambda(args[0], args[1], e)
             elif head == SF.DAMBDA:
                 args = get_args(tail, 2)
                 if not is_cons_list(args[0]):
-                    raise ValueError("TODO")
+                    raise ValueError(
+                        "/eval.py/eval_value/ dambda получил аргументы в неверном формате"
+                    )
                 return Dambda(args[0], args[1])
-            elif head == SF.MACRO:
+            elif head == SF.RACRO:
                 args = get_args(tail, 2)
                 if not is_cons_list(args[0]):
-                    raise ValueError("TODO")
-                return Macro(args[0], args[1])
+                    raise ValueError(
+                        "/eval.py/eval_value/ racro получил аргументы в неверном формате"
+                    )
+                return Racro(args[0], args[1])
+            elif head == SF.DEFMACRO:
+                name, args, body = get_args(tail, 3)
+                macro_env.define(name, Lambda(args, body, e))
+                return nil
+            elif head == SF.MACROEXPAND:
+                return macroexpand(tail)
         elif isinstance(head, Lambda):
             tail = cdr(value)
             new_e = Env(head.env)
@@ -254,7 +326,7 @@ def eval_value(value, e):
                     cons_out = nil
                     for el in out[::-1]:
                         cons_out = cons(el, cons_out)
-                    new_e.define(DEFAULT_ARGS, cons_out)
+                    new_e.define(REST_ARGS, cons_out)
                     break
                 elif is_nil(tail):
                     return Lambda(dambda_args, head.body, new_e)
@@ -282,10 +354,12 @@ def eval_value(value, e):
                     cons_out = nil
                     for el in out[::-1]:
                         cons_out = cons(el, cons_out)
-                    new_e.define(DEFAULT_ARGS, cons_out)
+                    new_e.define(REST_ARGS, cons_out)
                     break
                 elif is_nil(tail):
-                    raise ValueError("TODO")
+                    raise ValueError(
+                        "/eval.py/eval_value/ dambda при вызове получил недостаточно аргументов"
+                    )
                     # return Lambda(dambda_args, head.body, new_e)
 
                 arg = eval_value(car(tail), e)
@@ -297,26 +371,26 @@ def eval_value(value, e):
                 dambda_args = cdr(dambda_args)
 
             return eval_value(head.body, new_e)
-        elif isinstance(head, Macro):
+        elif isinstance(head, Racro):
             tail = cdr(value)
             new_e = Env()
-            macro_args = head.args
+            racro_args = head.args
             while True:
-                if is_nil(macro_args):
-                    new_e.define(DEFAULT_ARGS, tail)
+                if is_nil(racro_args):
+                    new_e.define(REST_ARGS, tail)
                     break
                 elif is_nil(tail):
                     # raise ValueError("TODO")
-                    return Macro(macro_args, macro_expand(head.body, new_e))
+                    return Racro(racro_args, racro_expand(head.body, new_e))
 
-                new_e.define(car(macro_args), car(tail))
+                new_e.define(car(racro_args), car(tail))
 
                 tail = cdr(tail)
-                macro_args = cdr(macro_args)
+                racro_args = cdr(racro_args)
 
-            return eval_value(macro_expand(head.body, new_e), e)
+            return eval_value(racro_expand(head.body, new_e), e)
 
         else:
-            raise ValueError("Плохая головная форма")
+            raise ValueError(f"Имя не распознано как переменная или функция: {head}")
     else:
         return value

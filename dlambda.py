@@ -10,7 +10,8 @@ class Dambda:
         self.args = args
         self.body = body
 
-class Macro:
+
+class Racro:
     def __init__(self, args, body):
         self.args = args
         self.body = body

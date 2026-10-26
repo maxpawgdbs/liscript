@@ -38,7 +38,7 @@ def strip_trash_left(text):
 def parse_list(text):
     text = strip_trash_left(text)
     if text == "":
-        raise ValueError("Отсутствует закрывающая скобка")
+        raise ValueError("/parser.py/text/ Отсутствует закрывающая скобка")
     f = text[0]
     if f == ")":
         return nil, text[1:]
@@ -56,7 +56,9 @@ def parser(text):
     if f == '"':
         s = text[1:].find('"') + 1
         if s == 0:
-            raise ValueError("Отсутствует закрывающая кавычка в " + text[:50])
+            raise ValueError(
+                "/parser.py/parser/ Отсутствует закрывающая кавычка в " + text[:50]
+            )
         return text[: s + 1][1:-1], text[s + 1 :]
     elif f == "'":
         x, y = parser(text[1:])
@@ -64,7 +66,7 @@ def parser(text):
     elif f == "(":
         return parse_list(text[1:])
     elif f == ")":
-        raise ValueError("Лишняя закрывающая скобка в " + text[:50])
+        raise ValueError("/parser.py/parser/ Лишняя закрывающая скобка в " + text[:50])
     else:
         i = re.search(r"[, \n\r\t\"();]|$", text).start()
         return parse_token(text[:i]), text[i:]
