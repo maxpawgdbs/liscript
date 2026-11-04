@@ -19,9 +19,9 @@ def equal_lists(x, y):
     head_x = car(x)
     head_y = car(y)
     while (
-        (head_x == head_y and type(head_x) == type(head_y))
-        if not (is_cons_list(head_x) and is_cons_list(head_y))
-        else equal_lists(head_x, head_y)
+            (head_x == head_y and type(head_x) == type(head_y))
+            if not (is_cons_list(head_x) and is_cons_list(head_y))
+            else equal_lists(head_x, head_y)
     ):
         x = cdr(x)
         y = cdr(y)
@@ -118,6 +118,10 @@ def racro_expand(value, e):
         return value
 
 
+def map_list(f, l):
+    return nil if is_nil(l) else cons(f(car(l)), map_list(f, cdr(l)))
+
+
 def macroexpand(value):
     if is_cons_list(value):
         if is_nil(value):
@@ -153,7 +157,9 @@ def macroexpand(value):
             # print(new_env.values.keys())
             return macroexpand(eval_value(l.body, new_env))
         else:
-            return cons(macroexpand(h), macroexpand(cdr(value)))
+            return map_list(macroexpand, value)
+            # return cons(h, macroexpand(cdr(value)))
+            # return cons(macroexpand(h), macroexpand(cdr(value)))
     else:
         return value
 

@@ -6,3 +6,5 @@ __pycache__/
 .clj-kondo/
 cljfmt.exe
 programs/test.clj
+.zprintrc
+zprint-filter-1.3.0

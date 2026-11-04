@@ -17,10 +17,14 @@ snd = lambda value, next: next
 
 
 def car(list):
+    if is_nil(list):
+        raise ValueError("car от пустого списка")
     return list(fst)
 
 
 def cdr(list):
+    if is_nil(list):
+        raise ValueError("cdr от пустого списка")
     return list(snd)
 
 
