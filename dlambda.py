@@ -15,3 +15,9 @@ class Racro:
     def __init__(self, args, body):
         self.args = args
         self.body = body
+
+
+class LazyCall:
+    def __init__(self, expr, env):
+        self.expr = expr
+        self.env = env

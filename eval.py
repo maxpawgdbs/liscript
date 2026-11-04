@@ -3,7 +3,7 @@ from enums import OP, PR, SF, values_to_string
 from show import repr, show
 from symbol import is_symbol, symbol
 from parser import parser
-from dlambda import Lambda, Dambda, Racro
+from dlambda import Lambda, Dambda, Racro, LazyCall
 from enviroment import Env, macro_env, env
 
 REST_ARGS = symbol("rest-args")
@@ -19,9 +19,9 @@ def equal_lists(x, y):
     head_x = car(x)
     head_y = car(y)
     while (
-            (head_x == head_y and type(head_x) == type(head_y))
-            if not (is_cons_list(head_x) and is_cons_list(head_y))
-            else equal_lists(head_x, head_y)
+        (head_x == head_y and type(head_x) == type(head_y))
+        if not (is_cons_list(head_x) and is_cons_list(head_y))
+        else equal_lists(head_x, head_y)
     ):
         x = cdr(x)
         y = cdr(y)
@@ -164,7 +164,7 @@ def macroexpand(value):
         return value
 
 
-def eval_value(value, e):
+def eval_value(value, e, strict=True):
     if is_symbol(value):
         return e.get(value)
     elif is_cons_list(value):
@@ -210,16 +210,17 @@ def eval_value(value, e):
                 return cdr(arg)
             elif head == SF.COND:
                 while not is_nil(tail):
+                    if is_nil(cdr(tail)):
+                        return eval_value(car(tail), e, strict)
+
                     condition_or_value = eval_value(car(tail), e)
                     tail = cdr(tail)
 
-                    if is_nil(tail):
-                        return condition_or_value
                     if not isinstance(condition_or_value, bool):
                         raise ValueError("/eval.py/eval_value/ cond получил не булеву")
 
                     if condition_or_value:
-                        return eval_value(car(tail), e)
+                        return eval_value(car(tail), e, strict)
                     else:
                         tail = cdr(tail)
                 raise ValueError(
@@ -234,7 +235,9 @@ def eval_value(value, e):
             elif head == SF.DO:
                 out = nil
                 while not is_nil(tail):
-                    out = eval_value(car(tail), e)
+                    out = eval_value(
+                        car(tail), e, strict if is_nil(cdr(tail)) else True
+                    )
                     tail = cdr(tail)
                 return out
             elif head == SF.PRINT:
@@ -319,6 +322,15 @@ def eval_value(value, e):
                 return nil
             elif head == SF.MACROEXPAND:
                 return macroexpand(tail)
+            elif head == SF.WHILE:
+                condition = car(tail)
+                body = cdr(tail)
+                while eval_value(condition, e):
+                    t = body
+                    while not is_nil(t):
+                        eval_value(car(t), e)
+                        t = cdr(t)
+                return nil
         elif isinstance(head, Lambda):
             tail = cdr(value)
             new_e = Env(head.env)
@@ -345,7 +357,12 @@ def eval_value(value, e):
                 tail = cdr(tail)
                 dambda_args = cdr(dambda_args)
 
-            return eval_value(head.body, new_e)
+            # return eval_value(head.body, new_e)
+            out = LazyCall(head.body, new_e)
+            if strict:
+                while isinstance(out, LazyCall):
+                    out = eval_value(out.expr, out.env, False)
+            return out
 
         elif isinstance(head, Dambda):
             tail = cdr(value)

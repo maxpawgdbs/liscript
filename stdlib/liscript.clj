@@ -6,15 +6,47 @@
 
 (def defracro (racro (name args body) (def name (racro args body))))
 
-(defmacro defn (name args)
-  (list def
-        name
+;; (defmacro defn (name args)
+;;   (list def
+;;         name
+;;         (list lambda
+;;               args
+;;               (cond
+;;                 (nil? rest-args) nil
+;;                 (nil? (cdr rest-args)) (car rest-args)
+;;                 (cons do rest-args)))))
+;;
+
+(def
+  defn-codegen (lambda (name args body)
+                 (list def
+                       name
+                       (list lambda
+                             args
+                             (cond
+                               (nil? body) nil
+                               (nil? (cdr body)) (car body)
+                               (cons do body))))))
+(defracro defn (name args) (eval (defn-codegen 'name 'args 'rest-args)))
+
+(defn fix (f) (f f))
+
+(defn while-codegen (condition body)
+  (list fix
         (list lambda
-              args
-              (cond
-                (nil? rest-args) nil
-                (nil? (cdr rest-args)) (car rest-args)
-                (cons do rest-args)))))
+              '(f)
+              (list do
+                    (list cond
+                          condition
+                          (list do
+                                (cond
+                                  (nil? body) nil
+                                  (nil? (cdr body)) (car body)
+                                  (cons do body))
+                                '(f f))
+                          nil)))))
+
+(defracro while (condition) (eval (while-codegen 'condition 'rest-args)))
 
 (defn list? (l) (= "list" (typeof l)))
 
@@ -219,5 +251,7 @@
     (nil? l) (error "Индекс больше размера")
     (= i 0) (car l)
     (list-ref (- i 1) (cdr l))))
+
+;; (defn while  )
 
 (symbol "LiScript dev version by october 2026")
