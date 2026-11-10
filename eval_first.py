@@ -5,6 +5,7 @@ from enviroment import env
 
 
 def eval_text(text, mode="text"):
+    print([text])
     out = None
     text = strip_trash_left(text)
     while text:

@@ -31,20 +31,28 @@
 
 (defn fix (f) (f f))
 
+;; (defn while-codegen (condition body)
+;;   (def s (symbol "while-codegen f"))
+;;   (list fix
+;;         (list lambda
+;;                (list s)
+;;                     (list cond
+;;                           condition
+;;                           (append (cons do body) (list (list s s)))
+;;                           nil))))
+;; ((lambda ()
+;;     (do
+;;         (def while-recursive (lambda ()
+;;             (cond condition
+;;                 (do body (while-recursive))
+;;                 nil)))
+;;         (while-recursive))))
+
 (defn while-codegen (condition body)
-  (list fix
-        (list lambda
-              '(f)
-              (list do
-                    (list cond
-                          condition
-                          (list do
-                                (cond
-                                  (nil? body) nil
-                                  (nil? (cdr body)) (car body)
-                                  (cons do body))
-                                '(f f))
-                          nil)))))
+  (list (list lambda nil (list do
+    (list def ' __while-recursive__ (list lambda nil
+        (list cond condition (append (cons do body) ' ((__while-recursive__))) nil)))
+    ' (__while-recursive__)))))
 
 (defracro while (condition) (eval (while-codegen 'condition 'rest-args)))
 
@@ -54,14 +62,22 @@
 
 (defracro += (x n) (set! x (+ x n)))
 
-(defracro or-impl (z)
-  (cond
-    (nil? z) false
-    (list cond (car z) true (or-impl (cdr z)))))
+;; (defracro or-impl (z)
+;;   (cond
+;;     (nil? z) false
+;;     (list cond (car z) true (or-impl (cdr z)))))
+;;
+;; (defracro or () (or-impl rest-args))
+
+(defn or-codegen (l)
+    (cond
+        (nil? l)
+        false
+        (cons cond (append (intersperse true l) ' (true false)))))
+
+(defracro or () (eval (or-codegen 'rest-args)))
 
 (defracro not (b) (= b false))
-
-(defracro or () (or-impl rest-args))
 
 (defn and-codegen (l)
   (cond
@@ -70,28 +86,53 @@
 
 (defracro and () (eval (and-codegen 'rest-args)))
 
-(defn range (a b)
-  (cond
-    (<= a b) (cons a (range (+ a 1) b))
-    nil))
+;; (defn range (a b)
+;;   (cond
+;;     (> a b) nil
+;;     (cons a (range (+ a 1) b))
+;;     ))
+
+(defn range-iter (a b l) (cond (> a b) l (range-iter a (- b 1) (cons b l))))
+(defn range (a b) (cond (and (= (typeof a) "int") (= (typeof b) "int")) (range-iter a b nil) (error "range Ожидалось целое число")))
 
 (defn append (a b)
   (cond
     (nil? a) b
     (cons (car a) (append (cdr a) b))))
 
+;; (defn merge-sort (array)
+;;   (cond
+;;     (nil? (cdr array)) array
+;;     (do (def
+;;           split (lambda (arr k out)
+;;                   (cond
+;;                     (= k 0) out
+;;                     (split (cdr arr) (- k 1) (cons (car arr) out)))))
+;;         (def
+;;           n (length array)
+;;           left (merge-sort (split array (/ n 2) ()))
+;;           right (merge-sort (split (reverse array) (+ (/ n 2) (% n 2)) ())))
+;;         (def
+;;           iter (lambda (a b ans)
+;;                  (cond
+;;                    (= a ()) (cond
+;;                               (= b ()) ans
+;;                               (iter a (cdr b) (cons (car b) ans)))
+;;                    (cond
+;;                      (= b ()) (iter (cdr a) b (cons (car a) ans))
+;;                      (cond
+;;                        (< (car a) (car b)) (iter (cdr a) b (cons (car a) ans))
+;;                        (iter a (cdr b) (cons (car b) ans)))))))
+;;         (reverse (iter left right ())))))
+
 (defn merge-sort (array)
-  (cond
-    (<= (length array) 1) array
-    (do (def
-          split (lambda (arr k out)
-                  (cond
-                    (= k 0) out
-                    (split (cdr arr) (- k 1) (cons (car arr) out)))))
+  (cond (nil? array) array
+    (nil? (cdr array)) array
+    (do
         (def
           n (length array)
-          left (merge-sort (split array (/ n 2) ()))
-          right (merge-sort (split (reverse array) (+ (/ n 2) (% n 2)) ())))
+          left (merge-sort (take (/ n 2) array))
+          right (merge-sort (drop (/ n 2) array)))
         (def
           iter (lambda (a b ans)
                  (cond
@@ -107,16 +148,28 @@
 
 (def sort merge-sort)
 
-(defn map (f l)
-  (cond
-    (nil? l) nil
-    (cons (f (car l)) (map f (cdr l)))))
+;; (defn map (f l)
+;;   (cond
+;;     (nil? l) nil
+;;     (cons (f (car l)) (map f (cdr l)))))
 
-(defn filter (f a)
-  (cond
-    (nil? a) nil
-    (f (car a)) (cons (car a) (filter f (cdr a)))
-    (filter f (cdr a))))
+(defn map-iter (f l o) (cond (nil? l) (reverse o) (map-iter f (cdr l) (cons (f (car l)) o))))
+(defn map (f l) (map-iter f l nil))
+
+;; (defn filter (f a)
+;;   (cond
+;;     (nil? a) nil
+;;     (f (car a)) (cons (car a) (filter f (cdr a)))
+;;     (filter f (cdr a))))
+;;
+;; (defn filter (f a)
+;;   (cond
+;;     (nil? a) nil
+;;     (f (car a)) (cons (car a) (filter f (cdr a)))
+;;     (filter f (cdr a))))
+
+(defn filter-iter (f a l) (cond (= a nil) (reverse l) (filter-iter f (cdr a) (cond (f (car a)) (cons (car a) l) l))))
+(defn filter (f a) (filter-iter f a nil))
 
 (defn reduce (f a l)
   (cond
@@ -140,11 +193,22 @@
     (nil? l) nil
     (drop (- n 1) (cdr l))))
 
+;; (defn take (n l)
+;;   (cond
+;;     (<= n 0) nil
+;;     (nil? l) nil
+;;     (cons (car l) (take (- n 1) (cdr l)))))
+
+(defn take-iter (n l o) (cond (and (< 0 n) (nil? l)) (error "список короче") (= n 0) (reverse o) (take-iter (- n 1) (cdr l) (cons (car l) o))))
 (defn take (n l)
-  (cond
-    (<= n 0) nil
-    (nil? l) nil
-    (cons (car l) (take (- n 1) (cdr l)))))
+    (cond
+        (< n 0)
+            (error "take ожидал неотрицательное число")
+        (not (= "int" (typeof n)))
+            (error "take ожидалось целое число")
+        (not (= "list" (typeof l)))
+            (error "take ожидался список")
+            (take-iter n l nil)))
 
 (defn intersperse (e l)
   (cond
@@ -243,7 +307,7 @@
     (<= n 0) ()
     (cons x (repeat (- n 1) x))))
 
-(defn error (s) (print s) (/ 1 0))
+;; (defn error (s) (print s) (/ 1 0))
 
 (defn list-ref (i l)
   (cond
@@ -254,4 +318,4 @@
 
 ;; (defn while  )
 
-(symbol "LiScript dev version by october 2026")
+(symbol "LiScript dev version by november 2026")

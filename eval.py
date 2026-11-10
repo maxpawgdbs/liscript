@@ -331,6 +331,12 @@ def eval_value(value, e, strict=True):
                         eval_value(car(t), e)
                         t = cdr(t)
                 return nil
+            elif head == SF.ERROR:
+                out = []
+                while not is_nil(tail):
+                    out.append(repr(eval_value(car(tail), e)))
+                    tail = cdr(tail)
+                raise ValueError(" ".join(str(x) for x in out))
         elif isinstance(head, Lambda):
             tail = cdr(value)
             new_e = Env(head.env)
@@ -393,7 +399,11 @@ def eval_value(value, e, strict=True):
                 tail = cdr(tail)
                 dambda_args = cdr(dambda_args)
 
-            return eval_value(head.body, new_e)
+            out = LazyCall(head.body, new_e)
+            if strict:
+                while isinstance(out, LazyCall):
+                    out = eval_value(out.expr, out.env, False)
+            return out
         elif isinstance(head, Racro):
             tail = cdr(value)
             new_e = Env()

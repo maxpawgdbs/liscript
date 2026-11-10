@@ -30,8 +30,9 @@ class SF(Enum):
         DEFMACRO,
         MACROEXPAND,
         WHILE,
+        ERROR,
         # EVALIN
-    ) = range(19)
+    ) = range(20)
 
 
 values_to_string = {
@@ -65,6 +66,7 @@ values_to_string = {
     SF.DEFMACRO: "defmacro",
     SF.MACROEXPAND: "macroexpand",
     SF.WHILE: "while-core",
+    SF.ERROR: "error",
 }
 
 string_to_values = dict(zip(values_to_string.values(), values_to_string.keys()))

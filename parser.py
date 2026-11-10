@@ -3,6 +3,7 @@ from list import cons, nil
 from enums import SF
 from symbol import symbol
 from enums import string_to_values
+from errors import GLOBAL_ERROR_STACK
 
 
 def parse_token(text):
