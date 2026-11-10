@@ -29,6 +29,9 @@
 #     return value == nil
 #
 
+import errors
+
+
 def is_cons_list(value):
     return type(value) is tuple
 
@@ -39,13 +42,13 @@ def cons(value, next):
 
 def car(list):
     if is_nil(list):
-        raise ValueError("car от пустого списка")
+        errors.raise_error_log("car от пустого списка")
     return list[0]
 
 
 def cdr(list):
     if is_nil(list):
-        raise ValueError("cdr от пустого списка")
+        errors.raise_error_log("cdr от пустого списка")
     return list[1]
 
 

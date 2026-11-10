@@ -49,10 +49,18 @@
 ;;         (while-recursive))))
 
 (defn while-codegen (condition body)
-  (list (list lambda nil (list do
-    (list def ' __while-recursive__ (list lambda nil
-        (list cond condition (append (cons do body) ' ((__while-recursive__))) nil)))
-    ' (__while-recursive__)))))
+  (list (list lambda
+              nil
+              (list do
+                    (list def
+                          '__while-recursive__
+                          (list lambda
+                                nil
+                                (list cond
+                                      condition
+                                      (append (cons do body) '((__while-recursive__)))
+                                      nil)))
+                    '(__while-recursive__)))))
 
 (defracro while (condition) (eval (while-codegen 'condition 'rest-args)))
 
@@ -70,10 +78,9 @@
 ;; (defracro or () (or-impl rest-args))
 
 (defn or-codegen (l)
-    (cond
-        (nil? l)
-        false
-        (cons cond (append (intersperse true l) ' (true false)))))
+  (cond
+    (nil? l) false
+    (cons cond (append (intersperse true l) '(true false)))))
 
 (defracro or () (eval (or-codegen 'rest-args)))
 
@@ -92,8 +99,14 @@
 ;;     (cons a (range (+ a 1) b))
 ;;     ))
 
-(defn range-iter (a b l) (cond (> a b) l (range-iter a (- b 1) (cons b l))))
-(defn range (a b) (cond (and (= (typeof a) "int") (= (typeof b) "int")) (range-iter a b nil) (error "range Ожидалось целое число")))
+(defn range-iter (a b l)
+  (cond
+    (> a b) l
+    (range-iter a (- b 1) (cons b l))))
+(defn range (a b)
+  (cond
+    (and (= (typeof a) "int") (= (typeof b) "int")) (range-iter a b nil)
+    (error "range Ожидалось целое число")))
 
 (defn append (a b)
   (cond
@@ -126,10 +139,10 @@
 ;;         (reverse (iter left right ())))))
 
 (defn merge-sort (array)
-  (cond (nil? array) array
+  (cond
+    (nil? array) array
     (nil? (cdr array)) array
-    (do
-        (def
+    (do (def
           n (length array)
           left (merge-sort (take (/ n 2) array))
           right (merge-sort (drop (/ n 2) array)))
@@ -153,7 +166,10 @@
 ;;     (nil? l) nil
 ;;     (cons (f (car l)) (map f (cdr l)))))
 
-(defn map-iter (f l o) (cond (nil? l) (reverse o) (map-iter f (cdr l) (cons (f (car l)) o))))
+(defn map-iter (f l o)
+  (cond
+    (nil? l) (reverse o)
+    (map-iter f (cdr l) (cons (f (car l)) o))))
 (defn map (f l) (map-iter f l nil))
 
 ;; (defn filter (f a)
@@ -168,7 +184,14 @@
 ;;     (f (car a)) (cons (car a) (filter f (cdr a)))
 ;;     (filter f (cdr a))))
 
-(defn filter-iter (f a l) (cond (= a nil) (reverse l) (filter-iter f (cdr a) (cond (f (car a)) (cons (car a) l) l))))
+(defn filter-iter (f a l)
+  (cond
+    (= a nil) (reverse l)
+    (filter-iter f
+                 (cdr a)
+                 (cond
+                   (f (car a)) (cons (car a) l)
+                   l))))
 (defn filter (f a) (filter-iter f a nil))
 
 (defn reduce (f a l)
@@ -199,16 +222,17 @@
 ;;     (nil? l) nil
 ;;     (cons (car l) (take (- n 1) (cdr l)))))
 
-(defn take-iter (n l o) (cond (and (< 0 n) (nil? l)) (error "список короче") (= n 0) (reverse o) (take-iter (- n 1) (cdr l) (cons (car l) o))))
+(defn take-iter (n l o)
+  (cond
+    (and (< 0 n) (nil? l)) (error "список короче")
+    (= n 0) (reverse o)
+    (take-iter (- n 1) (cdr l) (cons (car l) o))))
 (defn take (n l)
-    (cond
-        (< n 0)
-            (error "take ожидал неотрицательное число")
-        (not (= "int" (typeof n)))
-            (error "take ожидалось целое число")
-        (not (= "list" (typeof l)))
-            (error "take ожидался список")
-            (take-iter n l nil)))
+  (cond
+    (< n 0) (error "take ожидал неотрицательное число")
+    (not (= "int" (typeof n))) (error "take ожидалось целое число")
+    (not (= "list" (typeof l))) (error "take ожидался список")
+    (take-iter n l nil)))
 
 (defn intersperse (e l)
   (cond

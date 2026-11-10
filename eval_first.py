@@ -3,17 +3,21 @@ from show import show
 from parser import parser, strip_trash_left
 from enviroment import env
 
+import errors
+
 
 def eval_text(text, mode="text"):
-    print([text])
     out = None
     text = strip_trash_left(text)
     while text:
+        # errors.GLOBAL_ERROR_STACK = []
         x, text = parser(text)
-        x = macroexpand(x)
+        # errors.GLOBAL_ERROR_STACK.append(show(x))
+        # x = macroexpand(x)
         x = eval_value(x, env)
         out = show(x)
         if mode == "text":
+            # print(errors.GLOBAL_ERROR_STACK)
             print(out)
         text = strip_trash_left(text)
     if mode == "file" and not (out is None):

@@ -3,7 +3,7 @@ from list import cons, nil
 from enums import SF
 from symbol import symbol
 from enums import string_to_values
-from errors import GLOBAL_ERROR_STACK
+import errors
 
 
 def parse_token(text):
@@ -39,7 +39,7 @@ def strip_trash_left(text):
 def parse_list(text):
     text = strip_trash_left(text)
     if text == "":
-        raise ValueError("/parser.py/text/ Отсутствует закрывающая скобка")
+        errors.raise_error_log("/parser.py/text/ Отсутствует закрывающая скобка")
     f = text[0]
     if f == ")":
         return nil, text[1:]
@@ -57,7 +57,7 @@ def parser(text):
     if f == '"':
         s = text[1:].find('"') + 1
         if s == 0:
-            raise ValueError(
+            errors.raise_error_log(
                 "/parser.py/parser/ Отсутствует закрывающая кавычка в " + text[:50]
             )
         return text[: s + 1][1:-1], text[s + 1 :]
@@ -67,7 +67,9 @@ def parser(text):
     elif f == "(":
         return parse_list(text[1:])
     elif f == ")":
-        raise ValueError("/parser.py/parser/ Лишняя закрывающая скобка в " + text[:50])
+        errors.raise_error_log(
+            "/parser.py/parser/ Лишняя закрывающая скобка в " + text[:50]
+        )
     else:
         i = re.search(r"[, \n\r\t\"();]|$", text).start()
         return parse_token(text[:i]), text[i:]

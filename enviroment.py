@@ -1,5 +1,6 @@
 from symbol import symbol_name
 from settings import settings
+import errors
 
 
 class Env:
@@ -9,7 +10,7 @@ class Env:
 
     def define(self, sym, value):
         if settings.immutable_mode and symbol_name(sym) in self.values:
-            raise ValueError(
+            errors.raise_error_log(
                 f"/enviroment.py/Env/define/ Попытка изменить неизменяемую переменную {sym}"
             )
         self.values[symbol_name(sym)] = value
@@ -24,7 +25,7 @@ class Env:
 
     def set(self, sym, value):
         if settings.immutable_mode and symbol_name(sym) in self.values:
-            raise ValueError(
+            errors.raise_error_log(
                 f"/enviroment.py/Env/set/ Попытка изменить неизменяемую переменную {sym}"
             )
         cur = self
@@ -33,7 +34,7 @@ class Env:
                 cur.values[symbol_name(sym)] = value
                 return
             cur = cur.parent
-        raise NameError(
+        errors.raise_error_log(
             f"/enviroment.py/Env/set/ Попытка изменить несуществующую переменную {sym}"
         )
 
