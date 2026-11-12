@@ -341,6 +341,20 @@ def eval_value(value, e, strict=True):
                         out.append(repr(eval_value(car(tail), e)))
                         tail = cdr(tail)
                     errors.raise_error_log(" ".join(str(x) for x in out))
+                elif head == SF.EVALIN:
+                    env_lambda = eval_value(car(tail), e)
+                    if not isinstance(env_lambda, Lambda):
+                        errors.raise_error_log("Ожидалась лямбда")
+                    tail = cdr(tail)
+                    out = nil
+                    while not is_nil(tail):
+                        out = eval_value(
+                            car(tail),
+                            env_lambda.env,
+                            strict if is_nil(cdr(tail)) else True,
+                        )
+                        tail = cdr(tail)
+                    return out
             elif isinstance(head, Lambda):
                 tail = cdr(value)
                 new_e = Env(head.env)

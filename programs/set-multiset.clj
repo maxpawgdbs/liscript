@@ -1,0 +1,77 @@
+(def
+  max-x 3
+  max-y 2)
+(def all-dirs '((1 2) (2 1) (-1 2) (2 -1) (1 -2) (-2 1) (-1 -2) (-2 -1)))
+
+(defn multiset ()
+  (def init-codegen nil)
+  (def x 1)
+  (while (<= x max-x)
+    (def y 1)
+    (while (<= y max-y)
+      (set! init-codegen (cons 0 init-codegen))
+      (set! init-codegen (cons (symbol (++ "p-" x "-" y)) init-codegen))
+      (+= y 1))
+    (+= x 1))
+  (eval (cons def init-codegen))
+  (def total-count 0)
+  (def distinct-count 0)
+  (defn add (pos)
+    (def sym (symbol (++ "p-" (car pos) "-" (car (cdr pos)))))
+    (def val (eval sym))
+    (+= total-count 1)
+    (cond
+      (= val 0) (+= distinct-count 1)
+      nil)
+    (eval (list set! sym (+ val 1))))
+  (defn remove (pos)
+    (def sym (symbol (++ "p-" (car pos) "-" (car (cdr pos)))))
+    (def val (eval sym))
+    (when (> val 0)
+      (-= total-count 1)
+      (cond
+        (= val 1) (-= distinct-count 1)
+        nil)
+      (eval (list set! sym (- val 1)))))
+  (lambda (input) (eval input)))
+
+(defn set ()
+  (def init-codegen nil)
+  (def x 1)
+  (while (<= x max-x)
+    (def y 1)
+    (while (<= y max-y)
+      (def l all-dirs)
+      (while (not (nil? l))
+        (def
+          dx (car (car l))
+          dy (car (cdr (car l))))
+        (def
+          x1 (+ x dx)
+          y1 (+ y dy))
+        (when (and (<= 1 x1 max-x) (<= 1 y1 max-y))
+          (set! init-codegen (cons false init-codegen))
+          (set! init-codegen
+                (cons (symbol (++ "s-" x "-" y "-" x1 "-" y1)) init-codegen)))
+        (set! l (cdr l)))
+      (+= y 1))
+    (+= x 1))
+  (print init-codegen)
+  (eval (cons def init-codegen))
+  (def count 0)
+  (defn add (from to)
+    (def
+      sym (symbol
+            (++ "s-" (car from) "-" (car (cdr from)) "-" (car to) "-" (car (cdr to)))))
+    (def val (eval sym))
+    (when (not val) (+= count 1) (eval (list set! sym true))))
+  (defn remove (from to)
+    (def
+      sym (symbol
+            (++ "s-" (car from) "-" (car (cdr from)) "-" (car to) "-" (car (cdr to)))))
+    (def val (eval sym))
+    (when val (-= count 1) (eval (list set! sym false))))
+  (defn contains? (from to)
+    (eval (symbol
+            (++ "s-" (car from) "-" (car (cdr from)) "-" (car to) "-" (car (cdr to))))))
+  (lambda (input) (eval input)))

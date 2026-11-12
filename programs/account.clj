@@ -1,0 +1,10 @@
+(defn account (balance)
+  (defn add (value) (+= balance value) balance)
+  (defn sub (value) (-= balance value) balance)
+  (lambda (v) (eval v)))
+
+(defn hash-map ()
+  (defn dispatch (v) (eval v))
+  (defn set (sym val) (eval (list eval-in dispatch (list eval (list def sym val)))))
+  (defn get (sym) (eval (list eval-in dispatch (list eval sym))))
+  dispatch)

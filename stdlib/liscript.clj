@@ -69,7 +69,7 @@
 (defn symbol? (l) (= "symbol" (typeof l)))
 
 (defracro += (x n) (set! x (+ x n)))
-
+(defracro -= (x n) (set! x (- x n)))
 ;; (defracro or-impl (z)
 ;;   (cond
 ;;     (nil? z) false
@@ -92,6 +92,9 @@
     (list cond (car l) (and-codegen (cdr l)) false)))
 
 (defracro and () (eval (and-codegen 'rest-args)))
+
+(defn when-codegen (condition body) (list cond condition (cons do body) nil))
+(defracro when (condition) (eval (when-codegen 'condition 'rest-args)))
 
 ;; (defn range (a b)
 ;;   (cond
@@ -340,6 +343,28 @@
     (= i 0) (car l)
     (list-ref (- i 1) (cdr l))))
 
-;; (defn while  )
+(defn apply (f l)
+  (cond
+    (list? l) (eval (cons 'f (map (lambda (x) (list quote x)) l)))
+    (f l)))
+
+(defn zip-with (f a b)
+  (cond
+    (or (nil? a) (nil? b)) nil
+    (cons (f (car a) (car b)) (zip-with f (cdr a) (cdr b)))))
+
+(defn distinct-core (l o)
+  (cond
+    (nil? l) o
+    (distinct-core (cdr l)
+                   (cond
+                     (contains? (car l) o) o
+                     (cons (car l) o)))))
+(defn distinct (l) (reverse (distinct-core l nil)))
+
+(defn mapcat (f l)
+  (cond
+    (nil? l) nil
+    (append (f (car l)) (mapcat f (cdr l)))))
 
 (symbol "LiScript dev version by november 2026")
