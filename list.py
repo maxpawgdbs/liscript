@@ -32,24 +32,32 @@
 import errors
 
 
+class ConsList:
+    def __init__(self, car, cdr):
+        self.car = car
+        self.cdr = cdr
+
+
 def is_cons_list(value):
-    return type(value) is tuple
+    return isinstance(value, ConsList)
+    # return type(value) is tuple
 
 
 def cons(value, next):
-    return (value, next)
+    return ConsList(value, next)
+    # return (value, next)
 
 
 def car(list):
     if is_nil(list):
         errors.raise_error_log("car от пустого списка")
-    return list[0]
+    return list.car
 
 
 def cdr(list):
     if is_nil(list):
         errors.raise_error_log("cdr от пустого списка")
-    return list[1]
+    return list.cdr
 
 
 nil = cons(None, None)

@@ -32,7 +32,8 @@ class SF(Enum):
         WHILE,
         ERROR,
         EVALIN,
-    ) = range(21)
+        PYTHON,
+    ) = range(22)
 
 
 values_to_string = {
@@ -68,6 +69,7 @@ values_to_string = {
     SF.WHILE: "while-core",
     SF.ERROR: "error",
     SF.EVALIN: "eval-in",
+    SF.PYTHON: "python!",
 }
 
 string_to_values = dict(zip(values_to_string.values(), values_to_string.keys()))

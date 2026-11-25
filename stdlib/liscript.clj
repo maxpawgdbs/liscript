@@ -175,6 +175,10 @@
     (map-iter f (cdr l) (cons (f (car l)) o))))
 (defn map (f l) (map-iter f l nil))
 
+(defn n-times (n f x)
+  (cond
+    (<= n 0) x
+    (n-times (- n 1) f (f x))))
 ;; (defn filter (f a)
 ;;   (cond
 ;;     (nil? a) nil

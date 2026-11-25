@@ -119,6 +119,293 @@ def racro_expand(value, e):
         return value
 
 
+class StackItem:
+    def __init__(self, evaled, unevaled, e):
+        self.evaled = evaled
+        self.unevaled = unevaled
+        self.e = e
+
+    def __repr__(self):
+        return "" + str(self.evaled) + " " + repr(self.unevaled)
+
+    # def __iter__(self):
+    #     yield self.evaled
+    #     yield self.unevaled
+
+
+def eval_iter(value, init_e, max_stack_size):
+    if is_symbol(value):
+        return init_e.get(value)
+
+    if not is_cons_list(value):
+        return value
+
+    if is_nil(value):
+        return value
+
+    stack = [StackItem([], value, init_e)]
+    while True:
+        max_stack_size[0] = max(max_stack_size[0], len(stack))
+        if not stack:
+            raise ValueError("empty stack")
+
+        # print(stack, len(stack), len(stack[-1].evaled), len(stack[-1].unevaled), end="\n\n\n\n")
+        # print(stack)
+
+        evaled = stack[-1].evaled
+        unevaled = stack[-1].unevaled
+        stack_e = stack[-1].e
+        if is_symbol(unevaled):
+            res = stack_e.get(unevaled)
+            stack.pop()
+
+            if not stack:
+                return res
+            else:
+                stack[-1].evaled.append(res)
+                continue
+
+        elif not is_cons_list(unevaled):
+            res = unevaled
+            stack.pop()
+
+            if not stack:
+                return res
+            else:
+                stack[-1].evaled.append(res)
+                continue
+        elif is_nil(unevaled) and not evaled:
+            stack.pop()
+            if not stack:
+                return nil
+            stack[-1].evaled.append(nil)
+            continue
+        elif (
+            is_nil(unevaled)
+            and not isinstance(evaled[0], Lambda)
+            and not isinstance(evaled[0], Racro)
+            and evaled[0] != SF.EVAL
+        ):
+            res = apply(evaled, stack_e)
+            stack.pop()
+
+            if not stack:
+                return res
+            else:
+                stack[-1].evaled.append(res)
+                continue
+        else:
+            # head = car(unevaled)
+            # stack[-1].unevaled = cdr(unevaled)
+            # evaled_head = evaled[0] if evaled else None
+            evaled_head = evaled[0] if evaled else None
+            if evaled_head in (SF.EVALIN, SF.WHILE):
+                res = eval_value(cons(evaled_head, unevaled), stack_e)
+                stack.pop()
+                if not stack:
+                    return res
+                stack[-1].evaled.append(res)
+                continue
+            if not is_nil(unevaled):
+                head = car(unevaled)
+                stack[-1].unevaled = cdr(unevaled)
+
+            if evaled_head == SF.QUOTE:
+                res = head
+            elif (evaled_head == SF.DEF or evaled_head == SF.SET) and len(
+                evaled
+            ) % 2 == 1:
+                res = head
+            elif (
+                evaled_head == SF.LAMBDA
+                or evaled_head == SF.DAMBDA
+                or evaled_head == SF.RACRO
+            ):
+                res = head
+            elif evaled_head == SF.COND and (len(evaled) == 2 or is_nil(cdr(unevaled))):
+                # TODO check bool
+                cond_var = evaled[1] if len(evaled) >= 2 else None
+                if is_nil(cdr(unevaled)) or cond_var:
+                    stack.pop()
+                    if is_cons_list(head):
+                        stack.append(StackItem([], head, stack_e))
+                        continue
+                    elif is_symbol(head):
+                        res = stack_e.get(head)
+                    else:
+                        res = head
+
+                    if not stack:
+                        return res
+                else:
+                    stack[-1].unevaled = cdr(unevaled)
+                    stack[-1].evaled = evaled[:1]
+                    continue
+            elif evaled_head == SF.EVAL and is_nil(unevaled):
+                # TODO check evaled[1]
+                stack.pop()
+                if is_cons_list(evaled[1]):
+                    stack.append(StackItem([], evaled[1], stack_e))
+                    continue
+                elif is_symbol(evaled[1]):
+                    res = stack_e.get(evaled[1])
+                else:
+                    res = evaled[1]
+
+                if not stack:
+                    return res
+            elif isinstance(evaled_head, Lambda) and is_nil(unevaled):
+                new_e = Env(evaled_head.env)
+                tail_vec = evaled[1:]
+                lambda_args = evaled_head.args
+                big_break = False
+                while True:
+                    if is_nil(lambda_args):
+                        rest_args = nil
+                        for x in tail_vec[::-1]:
+                            rest_args = cons(x, rest_args)
+                        new_e.define(REST_ARGS, rest_args)
+                        break
+                    elif not tail_vec:
+                        # TODO fix this
+                        res = Lambda(lambda_args, evaled_head.body, new_e)
+                        stack.pop()
+                        if not stack:
+                            return res
+                        stack[-1].evaled.append(res)
+                        big_break = True
+                        break
+
+                    new_e.define(car(lambda_args), tail_vec[0])
+                    tail_vec = tail_vec[1:]
+                    lambda_args = cdr(lambda_args)
+
+                if big_break:
+                    continue
+
+                stack.pop()
+                stack.append(StackItem([], evaled_head.body, new_e))
+                continue
+
+            elif isinstance(evaled_head, Racro):
+                if not is_nil(unevaled):
+                    res = head
+                else:
+                    new_e = Env(None)
+                    tail_vec = evaled[1:]
+                    racro_args = evaled_head.args
+                    while True:
+                        if is_nil(racro_args):
+                            rest_args = nil
+                            for x in tail_vec[::-1]:
+                                rest_args = cons(x, rest_args)
+                            new_e.define(REST_ARGS, rest_args)
+                            break
+                        elif not tail_vec:
+                            # TODO fix this
+                            raise ValueError("TODO")
+
+                        new_e.define(car(racro_args), tail_vec[0])
+                        tail_vec = tail_vec[1:]
+                        racro_args = cdr(racro_args)
+
+                    stack.pop()
+                    stack.append(
+                        StackItem([], racro_expand(evaled_head.body, new_e), stack_e)
+                    )
+                    continue
+
+            elif is_cons_list(head):
+                stack.append(StackItem([], head, stack_e))
+                continue
+            elif is_symbol(head):
+                res = stack_e.get(head)
+            else:
+                res = head
+
+            stack[-1].evaled.append(res)
+
+
+def apply(vec, e):
+    if not vec:
+        raise ValueError("cant apply empty vec")
+
+    head = vec[0]
+    if isinstance(head, OP):
+        # TODO empty list
+        out = vec[1] if head != OP.SConcat else repr(vec[1])
+        for x in vec[2:]:
+            out = operations[head](out, x)
+        return out
+    elif isinstance(head, PR):
+        if not vec:
+            return True
+
+        cur = vec[1]
+        for next in vec[2:]:
+            if not predicate[head](cur, next):
+                return False
+            cur = next
+        return True
+
+    elif isinstance(head, SF):
+        tail = vec[1:]
+        # TODO (def a 1 b (+ a 1))
+        if head == SF.DEF:
+            while tail:
+                e.define(tail[0], tail[1])
+                tail = tail[2:]
+            return nil
+        elif head == SF.SET:
+            while tail:
+                e.set(tail[0], tail[1])
+                tail = tail[2:]
+            return nil
+        elif head == SF.QUOTE:
+            # TODO check tail length
+            return tail[0]
+        elif head == SF.TYPEOF:
+            if is_cons_list(tail[0]):
+                return "list"
+            elif is_symbol(tail[0]):
+                return "symbol"
+            else:
+                return type(tail[0]).__name__
+        elif head == SF.CONS:
+            # TODO check tail length
+            return cons(tail[0], tail[1])
+        elif head == SF.CAR:
+            # TODO check tail length
+            return car(tail[0])
+        elif head == SF.CDR:
+            # TODO check tail length
+            return cdr(tail[0])
+        # elif head == enums.SF.COND:
+        # elif head == enums.SF.EVAL:
+        elif head == SF.PRINT:
+            for x in tail:
+                print(repr(x), end=" ")
+            print()
+        elif head == SF.READ:
+            for x in tail:
+                print(repr(x), end=" ")
+            print()
+            user_input = input()
+            x, y = parser(user_input)
+            return x
+        elif head == SF.SYMBOL:
+            return symbol(repr(tail[0]))
+        elif head == SF.DO:
+            return tail[-1]
+        elif head == SF.LAMBDA:
+            return Lambda(tail[0], tail[1], e)
+        elif head == SF.DAMBDA:
+            return Dambda(tail[0], tail[1])
+        elif head == SF.RACRO:
+            return Racro(tail[0], tail[1])
+        # TODO the rest of them
+
+
 def map_list(f, l):
     return nil if is_nil(l) else cons(f(car(l)), map_list(f, cdr(l)))
 
@@ -173,12 +460,13 @@ def eval_value(value, e, strict=True):
             if is_nil(value):
                 return value
             head = eval_value(car(value), e)
+            tail = cdr(value)
             if isinstance(head, OP):
                 return fold_op(head, cdr(value), e)
             elif isinstance(head, PR):
                 return fold_pr(head, cdr(value), e)
             elif isinstance(head, SF):
-                tail = cdr(value)
+
                 if head == SF.QUOTE:
                     return get_args(tail, 1)[0]
                 elif head == SF.TYPEOF:
@@ -355,8 +643,17 @@ def eval_value(value, e, strict=True):
                         )
                         tail = cdr(tail)
                     return out
+                elif head == SF.PYTHON:
+                    out = nil
+                    while not is_nil(tail):
+                        k = eval_value(car(tail), e)
+                        if not isinstance(k, str):
+                            errors.raise_error_log("Ожидалась строка")
+                        out = eval(k)
+                        tail = cdr(tail)
+                    return out
             elif isinstance(head, Lambda):
-                tail = cdr(value)
+                # tail = cdr(value)
                 new_e = Env(head.env)
                 dambda_args = head.args
                 while True:
@@ -389,7 +686,7 @@ def eval_value(value, e, strict=True):
                 return out
 
             elif isinstance(head, Dambda):
-                tail = cdr(value)
+                # tail = cdr(value)
                 new_e = Env(e)
                 dambda_args = head.args
                 while True:
@@ -423,7 +720,7 @@ def eval_value(value, e, strict=True):
                         out = eval_value(out.expr, out.env, False)
                 return out
             elif isinstance(head, Racro):
-                tail = cdr(value)
+                # tail = cdr(value)
                 new_e = Env()
                 racro_args = head.args
                 while True:
@@ -440,10 +737,19 @@ def eval_value(value, e, strict=True):
                     racro_args = cdr(racro_args)
 
                 return eval_value(racro_expand(head.body, new_e), e)
-
+            elif callable(head):
+                args = []
+                while not is_nil(tail):
+                    args.append(eval_value(car(tail), e))
+                    tail = cdr(tail)
+                return head(*args)
             else:
-                errors.raise_error_log(
-                    f"Имя не распознано как переменная или функция: {head}"
-                )
+                try:
+                    arg = eval_value(get_args(tail, 1)[0], e)
+                    return getattr(head, arg)
+                except Exception:
+                    errors.raise_error_log(
+                        f"Имя не распознано как переменная или функция: {head}"
+                    )
         else:
             return value

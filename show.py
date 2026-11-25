@@ -4,10 +4,18 @@ from enums import values_to_string, SF
 from dlambda import Lambda, Dambda, Racro
 
 
+def value_in_dict(value, dictionary):
+    try:
+        return value in dictionary.keys()
+    except Exception:
+        return False
+
+
 def show(value):
+    # print(value)
     if type(value) is bool:
         return "true" if value else "false"
-    elif value in values_to_string.keys():
+    elif value_in_dict(value, values_to_string):
         return values_to_string[value]
     elif is_symbol(value):
         return symbol_name(value)
